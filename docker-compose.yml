@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # 1. Managed PostgreSQL Database Engine
+  database:
+    image: postgres:15-alpine
+    container_name: printexpress-database
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: securepassword123
+      POSTGRES_DB: printexpress
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - printexpress-network
+
+  # 2. Production Express.js API Backend Engine
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: printexpress-backend
+    restart: always
+    depends_on:
+      - database
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://admin:securepassword123@database:5432/printexpress?schema=public"
+      JWT_SECRET: "98abcdf86a7d91e847cd65eb98124ef12"
+      CLIENT_URL: "http://localhost:3000"
+    ports:
+      - "5000:5000"
+    volumes:
+      - uploaded_documents:/app/uploads
+    networks:
+      - printexpress-network
+
+  # 3. Production Next.js UI Frontend Engine
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: printexpress-frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+    ports:
+      - "3000:3000"
+    networks:
+      - printexpress-network
+
+volumes:
+  postgres_data:
+    driver: local
+  uploaded_documents:
+    driver: local
+
+networks:
+  printexpress-network:
+    driver: bridge

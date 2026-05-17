@@ -1,0 +1,51 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  name               String
+  registrationNumber String    @unique
+  passwordHash       String
+  role               String    @default("CUSTOMER") // "CUSTOMER" or "ADMIN"
+  createdAt          DateTime  @default(now())
+  orders             Order[]
+}
+
+model Order {
+  id            String     @id @default(uuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalPages    Int
+  totalCost     Float
+  paymentStatus String     @default("PENDING") // "PENDING", "PAID", "FAILED"
+  orderStatus   String     @default("PAID") // "PAID" (pending approval), "PRINTING", "READY", "COMPLETED"
+  configOptions String     // JSON string for paperSize, printType, sides, binding, copies
+  createdAt     DateTime   @default(now())
+  documents     Document[]
+  transactions  Transaction[]
+}
+
+model Document {
+  id           String   @id @default(uuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fileUrl      String
+  originalName String
+  fileSize     Int
+}
+
+model Transaction {
+  id                   String   @id @default(uuid())
+  orderId              String
+  order                Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  gatewayTransactionId String
+  amount               Float
+  status               String   @default("PENDING") // "PENDING", "SUCCESS", "FAILED"
+  createdAt            DateTime @default(now())
+}
