@@ -2,14 +2,15 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { ShieldCheck, Lock, ArrowRight, UserCheck, ShieldAlert } from 'lucide-react';
+import Link from 'next/link';
+import { ShieldCheck, Lock, ArrowRight, UserCheck, ShieldAlert, User, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const { login, loading, error } = useAuth();
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
-  const [showSeedHint, setShowSeedHint] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,11 +22,13 @@ export default function AdminLoginPage() {
     }
 
     try {
-      await login(registrationNumber, password);
+      await login(registrationNumber, password, 'ADMIN');
     } catch (err) {
       // Handled by Context
     }
   };
+
+
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden bg-slate-950">
@@ -88,13 +91,20 @@ export default function AdminLoginPage() {
             <div className="relative">
               <Lock className="w-5 h-5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Enter secure passcode"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-3 pl-11 pr-11 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-emerald-400 focus:outline-none transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+              </button>
             </div>
           </div>
 
@@ -117,22 +127,15 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        {/* Private Local Seeder Accordion */}
-        <div className="mt-8 pt-6 border-t border-slate-900 flex flex-col items-center">
-          <button
-            type="button"
-            onClick={() => setShowSeedHint(!showSeedHint)}
-            className="text-[9px] text-slate-600 hover:text-emerald-500 font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors duration-200 focus:outline-none"
-          >
-            <span>Terminal Guidelines</span>
-            <span>({showSeedHint ? 'Hide Details' : 'Show Details'})</span>
-          </button>
-          
-          {showSeedHint && (
-            <div className="mt-3 p-3 rounded-xl bg-slate-950 border border-slate-800 text-[10px] text-slate-500 text-center leading-relaxed max-w-xs animate-slide-up">
-              Default seeder access parameters are configured as: <code className="text-emerald-500 font-mono font-bold bg-emerald-950/20 px-1 py-0.5 rounded border border-emerald-500/10">admin</code> with password <code className="text-emerald-500 font-mono font-bold bg-emerald-950/20 px-1 py-0.5 rounded border border-emerald-500/10">password123</code>.
-            </div>
-          )}
+
+
+        <div className="mt-6 flex items-center justify-between text-xs text-slate-500">
+          <Link href="/login" className="hover:text-cyan-400 transition-colors font-bold flex items-center gap-1">
+            &larr; Customer Portal
+          </Link>
+          <Link href="/" className="hover:text-slate-300 transition-colors">
+            Return Home
+          </Link>
         </div>
 
       </div>

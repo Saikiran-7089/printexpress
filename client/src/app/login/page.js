@@ -3,12 +3,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { Printer, Mail, Lock, ArrowRight, UserCheck, Shield } from 'lucide-react';
+import { Printer, Mail, Lock, ArrowRight, UserCheck, Shield, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, loading, error } = useAuth();
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -21,32 +22,13 @@ export default function LoginPage() {
     }
 
     try {
-      await login(registrationNumber, password);
+      await login(registrationNumber, password, 'CUSTOMER');
     } catch (err) {
       // Error handled by AuthContext and exposed via context state
     }
   };
 
-  // Helper to quickly log in with test presets
-  const handlePreset = async (role) => {
-    let presetRegNum = '';
-    let presetPassword = 'password123';
 
-    if (role === 'ADMIN') {
-      presetRegNum = 'admin';
-    } else {
-      presetRegNum = 'customer';
-    }
-
-    setRegistrationNumber(presetRegNum);
-    setPassword(presetPassword);
-
-    try {
-      await login(presetRegNum, presetPassword);
-    } catch (err) {
-      // Ignored
-    }
-  };
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
@@ -98,13 +80,20 @@ export default function LoginPage() {
             <div className="relative">
               <Lock className="w-5 h-5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-3 pl-11 pr-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-sm"
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-3 pl-11 pr-11 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-sm"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400 focus:outline-none transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+              </button>
             </div>
           </div>
 
@@ -128,12 +117,18 @@ export default function LoginPage() {
         </form>
 
 
-        <p className="text-center text-slate-500 text-xs">
-          Don't have an account?{' '}
-          <Link href="/register" className="text-cyan-400 hover:text-cyan-300 font-semibold underline transition-colors">
-            Register Here
+
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
+          <p className="text-slate-500">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-cyan-400 hover:text-cyan-300 font-semibold underline transition-colors">
+              Register Here
+            </Link>
+          </p>
+          <Link href="/admin/login" className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 hover:text-emerald-400 transition-colors">
+            Manager Login &rarr;
           </Link>
-        </p>
+        </div>
 
 
       </div>

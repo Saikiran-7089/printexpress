@@ -10,6 +10,7 @@ generator client {
 model User {
   id                 String    @id @default(uuid())
   name               String
+  email              String?   
   registrationNumber String    @unique
   passwordHash       String
   role               String    @default("CUSTOMER") // "CUSTOMER" or "ADMIN"

@@ -90,10 +90,21 @@ export default function AdminDashboard() {
   
   const completedTodayCount = paidOrders.filter(o => o.orderStatus === 'COMPLETED').length;
 
-  // Filters application
+  // Filters application and Emergency sort priority
   const filteredOrders = orders.filter(order => {
     if (filterStatus === 'ALL') return true;
     return order.orderStatus.toUpperCase() === filterStatus;
+  }).sort((a, b) => {
+    // Both orders get parsed config
+    const configA = JSON.parse(a.configOptions || "{}");
+    const configB = JSON.parse(b.configOptions || "{}");
+    
+    // If one is emergency and the other is not, emergency goes first
+    if (configA.isEmergency && !configB.isEmergency) return -1;
+    if (!configA.isEmergency && configB.isEmergency) return 1;
+    
+    // Fall back to original order (usually chronological)
+    return 0;
   });
 
   return (
@@ -245,7 +256,12 @@ export default function AdminDashboard() {
                         <td className="py-4 pl-4">
                           <p className="font-bold text-slate-200">{order.user?.name}</p>
                           <p className="text-[10px] font-mono text-slate-500 mt-0.5">{order.user?.registrationNumber}</p>
-                          <p className="text-[9px] text-slate-500 mt-1">ID: {order.id.split('-')[0].toUpperCase()}...</p>
+                          <p className="text-[9px] text-slate-500 mt-1 mb-1.5">ID: {order.id.split('-')[0].toUpperCase()}...</p>
+                          {config.isEmergency && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black bg-rose-500/10 text-rose-400 border border-rose-500/30 uppercase tracking-widest shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+                              🚨 Emergency
+                            </span>
+                          )}
                         </td>
 
                         {/* Documents details with S3 downloader links */}
@@ -334,7 +350,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                                 className="bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-xl py-2 px-3 focus:outline-none focus:border-emerald-500 font-bold transition-all cursor-pointer hover:border-slate-700"
                               >
-                                <option value="PAID">📥 Incoming Job</option>
+                                <option value="PAID">📥 Incoming Printout</option>
                                 <option value="PRINTING">🖨️ Start Printing</option>
                                 <option value="READY">📦 Set Ready for Pickup</option>
                                 <option value="COMPLETED">✅ Mark Completed</option>

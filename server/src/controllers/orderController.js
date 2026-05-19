@@ -1,8 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const { calculateInvoice, estimatePageCount } = require('../services/pricingService');
-const { getMockS3Url } = require('../middleware/uploadMiddleware');
+const { getFileUrl } = require('../middleware/uploadMiddleware');
 const { sendOrderStatusUpdate, notifyAdminNewOrder } = require('../services/socketService');
 const { sendSimulatedStatusEmail } = require('../services/notificationService');
+const { sendPrintReadyEmail } = require('../services/emailService');
 
 const prisma = new PrismaClient();
 
@@ -17,7 +18,7 @@ async function uploadDocuments(req, res) {
 
     const processedFiles = req.files.map(file => {
       const estimatedPages = estimatePageCount(file.originalname, file.size);
-      const s3Url = getMockS3Url(file);
+      const s3Url = getFileUrl(file);
 
       return {
         originalName: file.originalname,
@@ -29,7 +30,7 @@ async function uploadDocuments(req, res) {
     });
 
     return res.status(200).json({
-      message: "Files uploaded and processed successfully (AWS S3 mock enabled).",
+      message: "Files uploaded and processed successfully.",
       files: processedFiles
     });
   } catch (error) {
@@ -55,7 +56,8 @@ async function checkout(req, res) {
       printType: printType || 'BW',
       sides: sides || 'single',
       binding: binding || 'NONE',
-      copies: parseInt(copies) || 1
+      copies: parseInt(copies) || 1,
+      isEmergency: req.body.isEmergency || false
     };
 
     // Construct pricing documents payload matching the rules
@@ -65,6 +67,7 @@ async function checkout(req, res) {
       sides: configOptions.sides,
       binding: configOptions.binding,
       copies: configOptions.copies,
+      isEmergency: configOptions.isEmergency,
       totalPages: parseInt(doc.totalPages) || 1,
       originalName: doc.originalName
     }));
@@ -187,7 +190,16 @@ async function getCustomerOrders(req, res) {
       orderBy: { createdAt: 'desc' }
     });
 
-    return res.status(200).json({ orders });
+    const shopQueueCount = await prisma.order.count({
+      where: {
+        paymentStatus: 'PAID',
+        orderStatus: {
+          in: ['PAID', 'PRINTING']
+        }
+      }
+    });
+
+    return res.status(200).json({ orders, shopQueueCount });
   } catch (error) {
     console.error("[OrderController.getCustomerOrders] Error:", error);
     return res.status(500).json({ error: "Failed to load customer orders." });
@@ -258,6 +270,27 @@ async function updateOrderStatus(req, res) {
     // 2. Output email log to system console
     sendSimulatedStatusEmail(order.user.registrationNumber, order.user.name, updatedOrder, status);
 
+    // 3. Automated 5-minute update to READY
+    if (status === 'PRINTING') {
+      setTimeout(async () => {
+        try {
+          const autoUpdatedOrder = await prisma.order.update({
+            where: { id: orderId },
+            data: { orderStatus: 'READY' },
+            include: { user: true }
+          });
+          sendOrderStatusUpdate(autoUpdatedOrder.userId, autoUpdatedOrder.id, 'READY', autoUpdatedOrder);
+          sendSimulatedStatusEmail(autoUpdatedOrder.user.registrationNumber, autoUpdatedOrder.user.name, autoUpdatedOrder, 'READY');
+          if (autoUpdatedOrder.user.email) {
+            sendPrintReadyEmail(autoUpdatedOrder.user.email, autoUpdatedOrder.user.name, autoUpdatedOrder.id);
+          }
+          console.log(`[OrderController.updateOrderStatus] Automatically updated order ${orderId} to READY after 5 minutes`);
+        } catch (autoErr) {
+          console.error(`[OrderController.updateOrderStatus] Error auto-updating order ${orderId}:`, autoErr);
+        }
+      }, 5 * 60 * 1000); // 5 minutes
+    }
+
     return res.status(200).json({
       message: `Order status changed successfully to ${status}.`,
       order: updatedOrder
@@ -300,7 +333,8 @@ async function updateOrderConfig(req, res) {
       printType: printType || existingConfig.printType || 'BW',
       sides: sides || existingConfig.sides || 'single',
       binding: binding || existingConfig.binding || 'NONE',
-      copies: copies !== undefined ? parseInt(copies) : (existingConfig.copies || 1)
+      copies: copies !== undefined ? parseInt(copies) : (existingConfig.copies || 1),
+      isEmergency: req.body.isEmergency !== undefined ? req.body.isEmergency : (existingConfig.isEmergency || false)
     };
 
     // Calculate recalculated total pages and cost invoice
@@ -310,6 +344,7 @@ async function updateOrderConfig(req, res) {
       sides: updatedConfig.sides,
       binding: updatedConfig.binding,
       copies: updatedConfig.copies,
+      isEmergency: updatedConfig.isEmergency,
       totalPages: doc.fileSize > 0 ? estimatePageCount(doc.originalName, doc.fileSize) : 1,
       originalName: doc.originalName
     }));

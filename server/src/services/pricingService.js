@@ -3,8 +3,8 @@
 const BASE_RATES = {
   // A4 rates (per page)
   A4: {
-    BW: { single: 2.0, double: 1.5 }, // double-sided is ₹3 per sheet, so ₹1.5 per page
-    COLOR: { single: 10.0, double: 7.5 } // double-sided is ₹15 per sheet, so ₹7.5 per page
+    BW: { single: 2.0, double: 4.0 }, // double-sided is ₹4 per page as requested
+    COLOR: { single: 10.0, double: 7.5 }
   },
   // Multipliers for sizes
   MULTIPLIERS: {
@@ -18,6 +18,8 @@ const BASE_RATES = {
     STAPLED: 5.0,
     SPIRAL: 30.0
   },
+  // Emergency add-on
+  EMERGENCY_FEE: 1.0,
   // GST Tax rate
   GST_RATE: 0.18
 };
@@ -35,6 +37,9 @@ function calculateDocumentCost(config) {
   const bindType = binding.toUpperCase(); // 'NONE', 'STAPLED', 'SPIRAL'
   const numCopies = Math.max(1, parseInt(copies) || 1);
   const pages = Math.max(1, parseInt(totalPages) || 1);
+  const isEmergency = config.isEmergency || false;
+
+  const sheets = sideType === 'double' ? Math.ceil(pages / 2) : pages;
 
   // Get base page rate (A4)
   const baseRateTable = BASE_RATES.A4[type] || BASE_RATES.A4.BW;
@@ -44,16 +49,19 @@ function calculateDocumentCost(config) {
   const sizeMultiplier = BASE_RATES.MULTIPLIERS[size] || 1.0;
   
   // Calculate cost per single copy
-  const printingCostPerCopy = pages * pageRate * sizeMultiplier;
+  const printingCostPerCopy = sheets * pageRate * sizeMultiplier;
   const bindingCost = BASE_RATES.BINDING[bindType] || 0.0;
+  const emergencyCostPerCopy = isEmergency ? pages * BASE_RATES.EMERGENCY_FEE : 0.0; // Emergency fee applies to total logical pages
 
   // Total for this document configuration
-  const subtotal = (printingCostPerCopy + bindingCost) * numCopies;
+  const subtotal = (printingCostPerCopy + bindingCost + emergencyCostPerCopy) * numCopies;
 
   return {
     pageRate: pageRate * sizeMultiplier,
     printingCost: printingCostPerCopy * numCopies,
     bindingCost: bindingCost * numCopies,
+    emergencyCost: emergencyCostPerCopy * numCopies,
+    sheets,
     subtotal: Math.round(subtotal * 100) / 100
   };
 }
@@ -64,9 +72,11 @@ function calculateDocumentCost(config) {
  */
 function calculateInvoice(documents = []) {
   let subtotal = 0;
+  let emergencyTotal = 0;
   const itemsBreakdown = documents.map((doc, index) => {
     const costDetails = calculateDocumentCost(doc);
     subtotal += costDetails.subtotal;
+    emergencyTotal += costDetails.emergencyCost;
     return {
       index,
       fileName: doc.originalName || `Document ${index + 1}`,
@@ -76,7 +86,8 @@ function calculateInvoice(documents = []) {
         printType: doc.printType,
         paperSize: doc.paperSize,
         sides: doc.sides,
-        binding: doc.binding
+        binding: doc.binding,
+        isEmergency: doc.isEmergency
       },
       ...costDetails
     };
@@ -88,6 +99,7 @@ function calculateInvoice(documents = []) {
   return {
     items: itemsBreakdown,
     subtotal: Math.round(subtotal * 100) / 100,
+    emergencyTotal: Math.round(emergencyTotal * 100) / 100,
     gst,
     total
   };

@@ -24,9 +24,10 @@ export default function DocumentUploadHub() {
   const [sides, setSides] = useState('single'); // single, double
   const [binding, setBinding] = useState('NONE'); // NONE, STAPLED, SPIRAL
   const [copies, setCopies] = useState(1);
+  const [isEmergency, setIsEmergency] = useState(false); // emergency print
 
   // Invoice calculations state
-  const [invoice, setInvoice] = useState({ items: [], subtotal: 0, gst: 0, total: 0 });
+  const [invoice, setInvoice] = useState({ items: [], subtotal: 0, emergencyTotal: 0, gst: 0, total: 0 });
 
   // Checkout payment overlay state
   const [createdOrder, setCreatedOrder] = useState(null);
@@ -73,7 +74,7 @@ export default function DocumentUploadHub() {
   // 2. Dynamic live price calculator
   const calculateLiveCosts = () => {
     if (files.length === 0) {
-      setInvoice({ items: [], subtotal: 0, gst: 0, total: 0 });
+      setInvoice({ items: [], subtotal: 0, emergencyTotal: 0, gst: 0, total: 0 });
       return;
     }
 
@@ -82,8 +83,11 @@ export default function DocumentUploadHub() {
     if (printType === 'COLOR') {
       basePageRate = sides === 'double' ? 7.5 : 10.0;
     } else {
-      basePageRate = sides === 'double' ? 1.5 : 2.0;
+      basePageRate = sides === 'double' ? 4.0 : 2.0;
     }
+
+    // Emergency printing base adder
+    const emergencyCostRate = isEmergency ? 1.0 : 0.0;
 
     // Size multipliers
     let sizeMultiplier = 1.0;
@@ -98,9 +102,13 @@ export default function DocumentUploadHub() {
     if (binding === 'SPIRAL') bindingCost = 30.0;
 
     let subtotal = 0;
+    let emergencyTotal = 0;
     const items = files.map((file, idx) => {
-      const docPrintingCost = file.estimatedPages * pageRate;
-      const docCost = (docPrintingCost + bindingCost) * copies;
+      const sheets = sides === 'double' ? Math.ceil(file.estimatedPages / 2) : file.estimatedPages;
+      const docPrintingCost = sheets * pageRate;
+      const docEmergencyCost = file.estimatedPages * emergencyCostRate * copies;
+      emergencyTotal += docEmergencyCost;
+      const docCost = (docPrintingCost + bindingCost) * copies + docEmergencyCost;
       subtotal += docCost;
 
       return {
@@ -118,6 +126,7 @@ export default function DocumentUploadHub() {
     setInvoice({
       items,
       subtotal: Math.round(subtotal * 100) / 100,
+      emergencyTotal: Math.round(emergencyTotal * 100) / 100,
       gst,
       total
     });
@@ -126,7 +135,7 @@ export default function DocumentUploadHub() {
   // Recalculate price when variables or files lists adjust
   useEffect(() => {
     calculateLiveCosts();
-  }, [files, paperSize, printType, sides, binding, copies]);
+  }, [files, paperSize, printType, sides, binding, copies, isEmergency]);
 
   // 3. Checkout Creator Route
   const handleProceedCheckout = async () => {
@@ -145,7 +154,8 @@ export default function DocumentUploadHub() {
         printType,
         sides,
         binding,
-        copies
+        copies,
+        isEmergency
       });
 
       setCreatedOrder(response.data.order);
@@ -184,7 +194,7 @@ export default function DocumentUploadHub() {
         router.push(`/dashboard/order/${createdOrder.id}`);
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.error || 'Simulated receipt verification failed. Please try again.');
+      setError(err.response?.data?.error || 'Receipt verification failed. Please try again.');
       setPaying(false);
     }
   };
@@ -250,23 +260,7 @@ export default function DocumentUploadHub() {
                     <p className="text-sm font-bold text-slate-200">Drag & drop files here, or click to browse</p>
                     <p className="text-xs text-slate-500 mt-1">Supports PDF, DOCX, and images (PNG, JPG, GIF) up to 15MB</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      setFiles(prev => [...prev, {
-                        originalName: "semester_assignment.pdf",
-                        fileSize: 1450200,
-                        estimatedPages: 12,
-                        fileUrl: "https://mock-s3-bucket.amazonaws.com/uploads/semester_assignment.pdf",
-                        tempDiskPath: "mock_disk_path.pdf"
-                      }]);
-                    }}
-                    className="mt-3 relative z-30 px-3.5 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer"
-                  >
-                    ⚡ Sandbox Mock Upload (12 Pages)
-                  </button>
+
                 </div>
               </div>
 
@@ -393,7 +387,28 @@ export default function DocumentUploadHub() {
                       }`}
                     >
                       Double-Sided
-                      <span className="block text-[9px] font-normal text-slate-500 mt-0.5">₹2.00 → ₹1.50 per page</span>
+                      <span className="block text-[9px] font-normal text-slate-500 mt-0.5">₹4.00 per page</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Emergency Print Option */}
+                <div className="space-y-3">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Processing Speed</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      onClick={() => setIsEmergency(!isEmergency)}
+                      className={`py-3 px-4 rounded-xl border text-sm font-bold flex items-center justify-between transition-all cursor-pointer ${
+                        isEmergency
+                          ? 'border-rose-500 bg-rose-500/10 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
+                          : 'border-slate-800 bg-slate-950/20 text-slate-400 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span>Emergency Print Out</span>
+                        <span className="text-[9px] font-normal opacity-80 mt-0.5">Jump the queue for urgent prints</span>
+                      </div>
+                      <span className="text-xs font-black">+₹1.00 / page</span>
                     </button>
                   </div>
                 </div>
@@ -489,8 +504,14 @@ export default function DocumentUploadHub() {
                   <div className="space-y-2.5 border-t border-slate-800/80 pt-4">
                     <div className="flex justify-between text-xs text-slate-400">
                       <span>Subtotal</span>
-                      <span className="font-semibold text-slate-300">₹{invoice.subtotal.toFixed(2)}</span>
+                      <span className="font-semibold text-slate-300">₹{(invoice.subtotal - invoice.emergencyTotal).toFixed(2)}</span>
                     </div>
+                    {isEmergency && invoice.emergencyTotal > 0 && (
+                      <div className="flex justify-between text-xs text-rose-400">
+                        <span>Emergency Speed Fee</span>
+                        <span className="font-semibold">+₹{invoice.emergencyTotal.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-xs text-slate-400">
                       <span>GST (18% printing service tax)</span>
                       <span className="font-semibold text-slate-300">₹{invoice.gst.toFixed(2)}</span>
@@ -546,7 +567,7 @@ export default function DocumentUploadHub() {
                 <div className="w-16 h-16 bg-emerald-500/10 border-2 border-emerald-500/40 rounded-full flex items-center justify-center mb-6 animate-pulse-glow">
                   <Check className="w-9 h-9 text-emerald-400 stroke-[2.5]" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-100">Simulated Payment Success</h3>
+                <h3 className="text-xl font-bold text-slate-100">Payment Success</h3>
                 <p className="text-slate-400 text-xs mt-1 mb-2">Transaction ID generated: pay_{createdOrder.id.split('-')[0]}</p>
                 <p className="text-emerald-400/90 font-semibold text-xs mt-3">Routing you to the live status screen...</p>
               </div>
@@ -559,7 +580,7 @@ export default function DocumentUploadHub() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-100">Scan & Pay (UPI)</h3>
-                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Dynamic Payment QR Simulator</p>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Dynamic Payment QR</p>
                   </div>
                 </div>
 
@@ -624,7 +645,7 @@ export default function DocumentUploadHub() {
                   <div className="flex items-start gap-2.5 p-3.5 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-[10px] text-slate-400 leading-relaxed">
                     <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-slate-300 block mb-0.5">Verification Sandbox</strong>
+                      <strong className="text-slate-300 block mb-0.5">Payment Verification</strong>
                       Scan QR, upload payment receipt confirmation screenshot, and click the confirmation button to dispatch the verification callback.
                     </div>
                   </div>

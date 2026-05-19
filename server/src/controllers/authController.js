@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { sendWelcomeEmail } = require('../services/emailService');
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || "printexpress_ultra_secret_key";
@@ -10,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "printexpress_ultra_secret_key";
  */
 async function register(req, res) {
   try {
-    const { name, registrationNumber, password, role } = req.body;
+    const { name, email, registrationNumber, password, role } = req.body;
 
     if (!name || !registrationNumber || !password) {
       return res.status(400).json({ error: "Missing required fields (name, registrationNumber, password)." });
@@ -36,11 +37,17 @@ async function register(req, res) {
     const user = await prisma.user.create({
       data: {
         name,
+        email,
         registrationNumber: registrationNumber.toLowerCase().trim(),
         passwordHash,
         role: userRole
       }
     });
+
+    // Send Welcome Email
+    if (email) {
+      sendWelcomeEmail(email, name);
+    }
 
     // Sign Token
     const token = jwt.sign(
@@ -63,6 +70,7 @@ async function register(req, res) {
       user: {
         id: user.id,
         name: user.name,
+        email: user.email,
         registrationNumber: user.registrationNumber,
         role: user.role,
         createdAt: user.createdAt
@@ -79,7 +87,7 @@ async function register(req, res) {
  */
 async function login(req, res) {
   try {
-    const { registrationNumber, password } = req.body;
+    const { registrationNumber, password, role } = req.body;
 
     if (!registrationNumber || !password) {
       return res.status(400).json({ error: "Missing registration number or password." });
@@ -92,6 +100,11 @@ async function login(req, res) {
 
     if (!user) {
       return res.status(400).json({ error: "Invalid registration number or password credentials." });
+    }
+
+    // Optional explicit role check
+    if (role && user.role !== role) {
+      return res.status(403).json({ error: "Access denied. Insufficient privileges for this portal." });
     }
 
     // Check Password
@@ -121,6 +134,7 @@ async function login(req, res) {
       user: {
         id: user.id,
         name: user.name,
+        email: user.email,
         registrationNumber: user.registrationNumber,
         role: user.role,
         createdAt: user.createdAt
@@ -149,6 +163,7 @@ async function getMe(req, res) {
       user: {
         id: user.id,
         name: user.name,
+        email: user.email,
         registrationNumber: user.registrationNumber,
         role: user.role,
         createdAt: user.createdAt

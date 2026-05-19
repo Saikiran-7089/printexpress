@@ -96,11 +96,14 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user, pathname, loading, router]);
 
-  const login = async (registrationNumber, password) => {
+  const login = async (registrationNumber, password, role = null) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post('/auth/login', { registrationNumber, password });
+      const payload = { registrationNumber, password };
+      if (role) payload.role = role;
+      
+      const response = await api.post('/auth/login', payload);
       const { token, user: userData } = response.data;
       
       localStorage.setItem('token', token);
@@ -123,11 +126,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, registrationNumber, password, role) => {
+  const register = async (name, email, registrationNumber, password, role) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post('/auth/register', { name, registrationNumber, password, role });
+      const response = await api.post('/auth/register', { name, email, registrationNumber, password, role });
       const { token, user: userData } = response.data;
       
       localStorage.setItem('token', token);

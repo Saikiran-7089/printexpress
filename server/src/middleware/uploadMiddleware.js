@@ -41,17 +41,16 @@ const upload = multer({
 });
 
 /**
- * Simulates mapping a local uploaded disk file to a secure Amazon S3 Bucket URL.
+ * Maps a local uploaded disk file to its accessible server URL.
  * @param {Object} file - Express Multer file object
  */
-function getMockS3Url(file) {
+function getFileUrl(file) {
   const cleanName = encodeURIComponent(file.filename);
-  // Returns a premium S3 link mockup
-  return `https://s3.ap-south-1.amazonaws.com/printexpress-bucket/documents/${cleanName}`;
+  return `http://localhost:5000/uploads/${cleanName}`;
 }
 
 module.exports = {
   upload,
-  getMockS3Url,
+  getFileUrl,
   UPLOADS_DIR
 };

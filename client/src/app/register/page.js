@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { Printer, Lock, ArrowRight, User, ShieldCheck, UserCheck } from 'lucide-react';
+import { Printer, Lock, ArrowRight, User, ShieldCheck, UserCheck, Mail } from 'lucide-react';
 
 export default function RegisterPage() {
   const { register, loading, error } = useAuth();
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('CUSTOMER'); // Default 'CUSTOMER'
@@ -17,13 +18,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setValidationError('');
 
-    if (!name || !registrationNumber || !password) {
+    if (!name || !email || !registrationNumber || !password) {
       setValidationError('Please input all registration fields.');
       return;
     }
 
     try {
-      await register(name, registrationNumber, password, role);
+      await register(name, email, registrationNumber, password, role);
     } catch (err) {
       // Handled by Context
     }
@@ -67,6 +68,22 @@ export default function RegisterPage() {
                 placeholder="John Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={loading}
+                className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2.5 pl-11 pr-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Email field */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Email Address</label>
+            <div className="relative">
+              <Mail className="w-5 h-5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="email"
+                placeholder="john@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-2.5 pl-11 pr-4 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-sm"
               />

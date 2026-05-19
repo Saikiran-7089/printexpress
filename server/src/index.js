@@ -60,7 +60,24 @@ async function seedDefaultUsers() {
 
 // Enable CORS
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or server-to-server)
+    if (!origin) return callback(null, true);
+    
+    // Dynamic matching for development, LAN testing, and public tunnels
+    if (
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:') ||
+      origin.startsWith('http://192.168.') ||
+      origin.endsWith('.loca.lt') ||
+      origin.endsWith('.ngrok-free.app') ||
+      origin === CLIENT_URL
+    ) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }));

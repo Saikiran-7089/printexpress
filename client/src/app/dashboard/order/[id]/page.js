@@ -242,7 +242,7 @@ export default function OrderTrackingStepper() {
             {/* Print details spec list */}
             <div className="glass-card rounded-2xl p-6">
               <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-5 pb-3 border-b border-slate-800">
-                Job Configuration
+                Printout Configuration
               </h3>
 
               <div className="space-y-4 text-xs">
