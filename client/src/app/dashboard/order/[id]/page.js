@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, BACKEND_URL } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import { useRouter, useParams } from 'next/navigation';
 import { io } from 'socket.io-client';
@@ -58,7 +58,7 @@ export default function OrderTrackingStepper() {
     if (!orderId) return;
 
     // Establish WebSocket socket client
-    const socket = io(`http://${window.location.hostname}:5000`);
+    const socket = io(BACKEND_URL.replace('/api', ''));
 
     socket.on('connect', () => {
       console.log(`[Socket.io] Connected to PrintExpress stream: ${socket.id}`);

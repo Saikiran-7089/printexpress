@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, BACKEND_URL } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import { io } from 'socket.io-client';
 import { 
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
 
   // Socket.io Dynamic Real-time sync for admin
   useEffect(() => {
-    const socket = io(`http://${window.location.hostname}:5000`);
+    const socket = io(BACKEND_URL.replace('/api', ''));
 
     socket.on('connect', () => {
       console.log('[Socket.io] Admin channel listening active:', socket.id);

@@ -7,13 +7,20 @@ import { useRouter, usePathname } from 'next/navigation';
 const AuthContext = createContext(null);
 
 const getBackendUrl = () => {
-  if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:5000/api`;
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
   }
+  if (typeof window !== 'undefined') {
+    // If the website is running locally or on a local network, use the current hostname
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.')) {
+      return `http://${window.location.hostname}:5000/api`;
+    }
+  }
+  // Default fallback for public testing/deployments: connect to localhost backend
   return 'http://localhost:5000/api';
 };
 
-const BACKEND_URL = getBackendUrl();
+export const BACKEND_URL = getBackendUrl();
 
 // Create pre-configured axios instance
 export const api = axios.create({
