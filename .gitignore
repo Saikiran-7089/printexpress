@@ -12,7 +12,6 @@ dist/
 # Local Uploads and Static Files
 uploads/
 server/uploads/
-client/public/qr.jpg
 
 # Local SQLite Databases and Prisma state
 *.db

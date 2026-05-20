@@ -43,9 +43,24 @@ const upload = multer({
 /**
  * Maps a local uploaded disk file to its accessible server URL.
  * @param {Object} file - Express Multer file object
+ * @param {Object} [req] - Express request object
  */
-function getFileUrl(file) {
+function getFileUrl(file, req) {
   const cleanName = encodeURIComponent(file.filename);
+  
+  if (process.env.BACKEND_URL) {
+    return `${process.env.BACKEND_URL}/uploads/${cleanName}`;
+  }
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return `${process.env.RENDER_EXTERNAL_URL}/uploads/${cleanName}`;
+  }
+  
+  if (req) {
+    const protocol = req.protocol;
+    const host = req.get('host');
+    return `${protocol}://${host}/uploads/${cleanName}`;
+  }
+  
   return `http://localhost:5000/uploads/${cleanName}`;
 }
 

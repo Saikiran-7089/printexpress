@@ -267,19 +267,23 @@ export default function AdminDashboard() {
                         {/* Documents details with S3 downloader links */}
                         <td className="py-4">
                           <div className="space-y-1.5 max-w-[200px]">
-                            {order.documents?.map((doc, idx) => (
-                              <a
-                                key={doc.id}
-                                href={`http://localhost:5000/uploads/${doc.fileUrl.split('/').pop()}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-semibold group"
-                                title="Open or Download Uploaded Document"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate max-w-[130px] underline">{doc.originalName}</span>
-                              </a>
-                            ))}
+                            {order.documents?.map((doc, idx) => {
+                              const fileName = doc.fileUrl.split('/').pop();
+                              const docUrl = `${BACKEND_URL.replace('/api', '')}/uploads/${fileName}`;
+                              return (
+                                <a
+                                  key={doc.id}
+                                  href={docUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-semibold group"
+                                  title="Open or Download Uploaded Document"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                                  <span className="truncate max-w-[130px] underline">{doc.originalName}</span>
+                                </a>
+                              );
+                            })}
                           </div>
                         </td>
 
@@ -310,7 +314,7 @@ export default function AdminDashboard() {
                               </span>
                               {order.transactions?.[0]?.gatewayTransactionId && (
                                 <a
-                                  href={`http://localhost:5000/uploads/${order.transactions[0].gatewayTransactionId}`}
+                                  href={`${BACKEND_URL.replace('/api', '')}/uploads/${order.transactions[0].gatewayTransactionId}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="block text-[10px] text-cyan-400 hover:text-cyan-300 underline font-bold mt-1"

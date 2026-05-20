@@ -17,7 +17,7 @@ const getBackendUrl = () => {
     }
   }
   // Default fallback for public testing/deployments: connect to localhost backend
-  return 'http://localhost:5000/api';
+  return 'https://printexpress-backend.onrender.com/api';
 };
 
 export const BACKEND_URL = getBackendUrl();

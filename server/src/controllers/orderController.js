@@ -4,11 +4,13 @@ const { getFileUrl } = require('../middleware/uploadMiddleware');
 const { sendOrderStatusUpdate, notifyAdminNewOrder } = require('../services/socketService');
 const { sendSimulatedStatusEmail } = require('../services/notificationService');
 const { sendPrintReadyEmail } = require('../services/emailService');
+const { PDFDocument } = require('pdf-lib');
+const fs = require('fs');
 
 const prisma = new PrismaClient();
 
 /**
- * Handle document attachments. Estimates pages and returns mock S3 links.
+ * Handle document attachments. Automatically detects exact PDF pages and returns mock S3 links.
  */
 async function uploadDocuments(req, res) {
   try {
@@ -16,9 +18,24 @@ async function uploadDocuments(req, res) {
       return res.status(400).json({ error: "No files were uploaded." });
     }
 
-    const processedFiles = req.files.map(file => {
-      const estimatedPages = estimatePageCount(file.originalname, file.size);
-      const s3Url = getFileUrl(file);
+    const processedFiles = await Promise.all(req.files.map(async (file) => {
+      const extension = file.originalname.split('.').pop().toLowerCase();
+      let estimatedPages = 1;
+
+      if (extension === 'pdf') {
+        try {
+          const bytes = fs.readFileSync(file.path);
+          const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+          estimatedPages = pdfDoc.getPageCount();
+        } catch (pdfErr) {
+          console.error(`[uploadDocuments] Error parsing PDF ${file.originalname}:`, pdfErr);
+          estimatedPages = estimatePageCount(file.originalname, file.size);
+        }
+      } else {
+        estimatedPages = estimatePageCount(file.originalname, file.size);
+      }
+
+      const s3Url = getFileUrl(file, req);
 
       return {
         originalName: file.originalname,
@@ -27,7 +44,7 @@ async function uploadDocuments(req, res) {
         fileUrl: s3Url,
         tempDiskPath: file.filename
       };
-    });
+    }));
 
     return res.status(200).json({
       message: "Files uploaded and processed successfully.",

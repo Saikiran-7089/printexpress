@@ -278,7 +278,7 @@ export default function DocumentUploadHub() {
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Uploaded Files ({files.length})</label>
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                     {files.map((file, idx) => (
-                      <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-950/60 border border-slate-800/80 rounded-xl group hover:border-slate-700 transition-colors animate-slide-up">
+                      <div key={idx} className="flex items-center justify-between p-3.5 bg-slate-950/60 border border-slate-800/80 rounded-xl group hover:border-slate-700 transition-colors animate-slide-up">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-cyan-400">
                             <FileText className="w-5 h-5" />
@@ -286,58 +286,16 @@ export default function DocumentUploadHub() {
                           <div>
                             <p className="text-xs font-bold text-slate-200 truncate max-w-xs sm:max-w-md">{file.originalName}</p>
                             <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
-                              {(file.fileSize / 1024 / 1024).toFixed(2)} MB • {file.estimatedPages} estimated pages
+                              {(file.fileSize / 1024 / 1024).toFixed(2)} MB • <span className="text-cyan-400 font-black">{file.estimatedPages} pages</span> (exactly detected)
                             </p>
                           </div>
                         </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-3 self-end sm:self-auto w-full sm:w-auto border-t border-slate-900 pt-2.5 sm:pt-0 sm:border-0">
-                          {/* Page Count Manual Adjuster */}
-                          <div className="flex items-center gap-1 bg-slate-900/80 border border-slate-800 rounded-lg p-0.5">
-                            <button
-                              onClick={() => {
-                                const newPages = Math.max(1, (file.estimatedPages || 1) - 1);
-                                const updated = [...files];
-                                updated[idx].estimatedPages = newPages;
-                                setFiles(updated);
-                              }}
-                              className="w-5 h-5 flex items-center justify-center text-xs font-black text-slate-400 hover:text-cyan-400 hover:bg-slate-800 rounded transition-all cursor-pointer"
-                            >
-                              -
-                            </button>
-                            <span className="text-[10px] font-bold text-slate-400 px-1">Pages:</span>
-                            <input
-                              type="number"
-                              min="1"
-                              value={file.estimatedPages || 1}
-                              onChange={(e) => {
-                                const newPages = Math.max(1, parseInt(e.target.value) || 1);
-                                const updated = [...files];
-                                updated[idx].estimatedPages = newPages;
-                                setFiles(updated);
-                              }}
-                              className="w-8 bg-transparent text-center text-xs font-black text-slate-200 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                            <button
-                              onClick={() => {
-                                const newPages = (file.estimatedPages || 1) + 1;
-                                const updated = [...files];
-                                updated[idx].estimatedPages = newPages;
-                                setFiles(updated);
-                              }}
-                              className="w-5 h-5 flex items-center justify-center text-xs font-black text-slate-400 hover:text-cyan-400 hover:bg-slate-800 rounded transition-all cursor-pointer"
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <button
-                            onClick={() => removeFile(idx)}
-                            className="p-1.5 hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 border border-transparent hover:border-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <X className="w-4.5 h-4.5" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => removeFile(idx)}
+                          className="p-1.5 hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 border border-transparent hover:border-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <X className="w-4.5 h-4.5" />
+                        </button>
                       </div>
                     ))}
                   </div>
