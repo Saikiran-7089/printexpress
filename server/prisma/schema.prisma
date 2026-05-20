@@ -39,6 +39,7 @@ model Document {
   fileUrl      String
   originalName String
   fileSize     Int
+  totalPages   Int      @default(1)
 }
 
 model Transaction {

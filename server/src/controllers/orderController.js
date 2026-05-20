@@ -88,7 +88,8 @@ async function checkout(req, res) {
           create: documents.map(doc => ({
             fileUrl: doc.fileUrl,
             originalName: doc.originalName,
-            fileSize: parseInt(doc.fileSize) || 0
+            fileSize: parseInt(doc.fileSize) || 0,
+            totalPages: parseInt(doc.totalPages) || 1
           }))
         }
       },
@@ -345,7 +346,7 @@ async function updateOrderConfig(req, res) {
       binding: updatedConfig.binding,
       copies: updatedConfig.copies,
       isEmergency: updatedConfig.isEmergency,
-      totalPages: doc.fileSize > 0 ? estimatePageCount(doc.originalName, doc.fileSize) : 1,
+      totalPages: doc.totalPages || 1,
       originalName: doc.originalName
     }));
 
