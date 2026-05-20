@@ -29,7 +29,7 @@ async function uploadDocuments(req, res) {
           estimatedPages = pdfDoc.getPageCount();
         } catch (pdfErr) {
           console.error(`[uploadDocuments] Error parsing PDF ${file.originalname}:`, pdfErr);
-          estimatedPages = estimatePageCount(file.originalname, file.size);
+          throw new Error(`Failed to read exact pages for ${file.originalname}. Please ensure the PDF is valid and not corrupted.`);
         }
       } else {
         estimatedPages = estimatePageCount(file.originalname, file.size);
@@ -52,7 +52,7 @@ async function uploadDocuments(req, res) {
     });
   } catch (error) {
     console.error("[OrderController.uploadDocuments] Error:", error);
-    return res.status(500).json({ error: "Failed to process uploaded files." });
+    return res.status(500).json({ error: error.message || "Failed to process uploaded files." });
   }
 }
 
@@ -287,6 +287,11 @@ async function updateOrderStatus(req, res) {
 
     // 2. Output email log to system console
     sendSimulatedStatusEmail(order.user.registrationNumber, order.user.name, updatedOrder, status);
+    
+    // 2.5 Send email if manually set to READY
+    if (status === 'READY' && updatedOrder.user.email) {
+      sendPrintReadyEmail(updatedOrder.user.email, updatedOrder.user.name, updatedOrder.id);
+    }
 
     // 3. Automated 5-minute update to READY
     if (status === 'PRINTING') {

@@ -4,7 +4,7 @@ const BASE_RATES = {
   // A4 rates (per page)
   A4: {
     BW: { single: 2.0, double: 4.0 }, // double-sided is ₹4 per page as requested
-    COLOR: { single: 10.0, double: 7.5 }
+    COLOR: { single: 10.0, double: 20.0 }
   },
   // Multipliers for sizes
   MULTIPLIERS: {
@@ -49,7 +49,15 @@ function calculateDocumentCost(config) {
   const sizeMultiplier = BASE_RATES.MULTIPLIERS[size] || 1.0;
   
   // Calculate cost per single copy
-  const printingCostPerCopy = sheets * pageRate * sizeMultiplier;
+  let printingCostPerCopy = 0;
+  if (sideType === 'double') {
+    // Math.floor(pages/2) gets number of full sheets printed on both sides.
+    // pages%2 gets the remaining single side.
+    printingCostPerCopy = (Math.floor(pages / 2) * baseRateTable.double + (pages % 2) * baseRateTable.single) * sizeMultiplier;
+  } else {
+    printingCostPerCopy = pages * baseRateTable.single * sizeMultiplier;
+  }
+  
   const bindingCost = BASE_RATES.BINDING[bindType] || 0.0;
   const emergencyCostPerCopy = isEmergency ? pages * BASE_RATES.EMERGENCY_FEE : 0.0; // Emergency fee applies to total logical pages
 

@@ -268,8 +268,7 @@ export default function AdminDashboard() {
                         <td className="py-4">
                           <div className="space-y-1.5 max-w-[200px]">
                             {order.documents?.map((doc, idx) => {
-                              const fileName = doc.fileUrl.split('/').pop();
-                              const docUrl = `${BACKEND_URL.replace('/api', '')}/uploads/${fileName}`;
+                              const docUrl = doc.fileUrl;
                               return (
                                 <a
                                   key={doc.id}

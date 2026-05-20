@@ -49,6 +49,42 @@ export default function OrderTrackingStepper() {
     }
   };
 
+  const [paying, setPaying] = useState(false);
+  const [screenshotFile, setScreenshotFile] = useState(null);
+
+  const handleSimulatePayment = async (e) => {
+    e.preventDefault();
+    if (!order) return;
+    if (!screenshotFile) {
+      alert('Please upload your payment confirmation receipt screenshot before proceeding.');
+      return;
+    }
+
+    setPaying(true);
+    try {
+      // Small simulated delay for gateway animation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const formData = new FormData();
+      formData.append('screenshot', screenshotFile);
+
+      const response = await api.post(`/orders/${order.id}/pay`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Update local state with the returned paid order
+      setOrder(response.data.order);
+      setLastUpdateAlert(true);
+      setTimeout(() => setLastUpdateAlert(false), 3000);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Receipt verification failed. Please try again.');
+    } finally {
+      setPaying(false);
+    }
+  };
+
   useEffect(() => {
     fetchOrderDetails();
   }, [orderId]);
@@ -287,9 +323,15 @@ export default function OrderTrackingStepper() {
                 
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-400 font-semibold">Payment Status:</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">
-                    PAID
-                  </span>
+                  {order.paymentStatus === 'PAID' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">
+                      PAID
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]">
+                      PENDING
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center border-t border-slate-900 pt-4">
@@ -301,6 +343,62 @@ export default function OrderTrackingStepper() {
                 </div>
               </div>
             </div>
+
+            {order.paymentStatus === 'PENDING' && (
+              <div className="glass-card rounded-2xl p-6">
+                <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-5 pb-3 border-b border-slate-800">
+                  Scan & Pay (UPI)
+                </h3>
+                <div className="flex flex-col items-center justify-center mb-6">
+                  <div className="relative p-4 bg-slate-900 border border-slate-800/80 rounded-2xl shadow-xl flex items-center justify-center">
+                    {/* Corner decorative borders */}
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-500 rounded-tl-xl pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-cyan-500 rounded-tr-xl pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-cyan-500 rounded-bl-xl pointer-events-none"></div>
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-cyan-500 rounded-br-xl pointer-events-none"></div>
+                    
+                    {/* Scan animation line */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-cyan-400/50 blur-[2px] animate-scan-line z-20 pointer-events-none"></div>
+
+                    {/* Real Slice QR Code Image */}
+                    <img 
+                      src="/qr.jpg" 
+                      alt="UPI Payment QR Code" 
+                      className="w-[180px] h-[180px] object-contain rounded-xl border border-slate-200 relative z-10 bg-white"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-bold text-center mt-3 tracking-wider">
+                    Scan with GPay, PhonePe, Paytm, etc.
+                  </p>
+                </div>
+                
+                <form onSubmit={handleSimulatePayment} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                      Upload Receipt Screenshot
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      required
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setScreenshotFile(e.target.files[0]);
+                        }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 px-3 text-xs text-slate-300 focus:outline-none focus:border-cyan-500 font-semibold cursor-pointer"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={paying}
+                    className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/10 mt-4 text-sm transition-all"
+                  >
+                    {paying ? 'Verifying Receipt...' : 'I Have Scanned and Paid'}
+                  </button>
+                </form>
+              </div>
+            )}
 
           </div>
 

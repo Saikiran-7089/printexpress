@@ -74,14 +74,20 @@ export default function UserDashboard() {
     const originalCopies = originalConfig.copies || 1;
     const basePages = Math.round(editingOrder.totalPages / originalCopies) || 1;
 
-    let baseRate = editPrintType === 'COLOR' ? (editSides === 'double' ? 7.5 : 10.0) : (editSides === 'double' ? 4.0 : 2.0);
+    const baseRates = editPrintType === 'COLOR' 
+      ? { single: 10.0, double: 20.0 }
+      : { single: 2.0, double: 4.0 };
     let multiplier = editPaperSize === 'A3' ? 2.0 : (editPaperSize === 'LEGAL' ? 1.5 : 1.0);
     let bindingCost = editBinding === 'STAPLED' ? 5.0 : (editBinding === 'SPIRAL' ? 30.0 : 0.0);
     let emergencyCost = originalConfig.isEmergency ? basePages * 1.0 * editCopies : 0.0;
     
-    let baseSheets = editSides === 'double' ? Math.ceil(basePages / 2) : basePages;
-
-    const subtotal = (baseSheets * baseRate * multiplier + bindingCost) * editCopies + emergencyCost;
+    let printingCost = 0;
+    if (editSides === 'double') {
+      printingCost = (Math.floor(basePages / 2) * baseRates.double + (basePages % 2) * baseRates.single) * multiplier;
+    } else {
+      printingCost = basePages * baseRates.single * multiplier;
+    }
+    const subtotal = (printingCost + bindingCost) * editCopies + emergencyCost;
     const gst = subtotal * 0.18;
     return Math.round((subtotal + gst) * 100) / 100;
   };
@@ -117,14 +123,17 @@ export default function UserDashboard() {
     const originalCopies = config.copies || 1;
     const basePages = Math.round(order.totalPages / originalCopies) || 1;
     const isColor = config.printType === 'COLOR';
-    const baseRate = isColor ? (config.sides === 'double' ? 7.5 : 10.0) : (config.sides === 'double' ? 4.0 : 2.0);
+    const baseRates = isColor ? { single: 10.0, double: 20.0 } : { single: 2.0, double: 4.0 };
     const sizeMultiplier = config.paperSize === 'A3' ? 2.0 : (config.paperSize === 'LEGAL' ? 1.5 : 1.0);
     const bindingCost = config.binding === 'STAPLED' ? 5.0 : (config.binding === 'SPIRAL' ? 30.0 : 0.0);
     const emergencyCost = config.isEmergency ? basePages * 1.0 * originalCopies : 0.0;
     
-    const baseSheets = config.sides === 'double' ? Math.ceil(basePages / 2) : basePages;
-
-    const printingCost = baseSheets * baseRate * sizeMultiplier * originalCopies;
+    let printingCost = 0;
+    if (config.sides === 'double') {
+      printingCost = (Math.floor(basePages / 2) * baseRates.double + (basePages % 2) * baseRates.single) * sizeMultiplier * originalCopies;
+    } else {
+      printingCost = basePages * baseRates.single * sizeMultiplier * originalCopies;
+    }
     const totalBindingCost = bindingCost * originalCopies;
     const subtotal = printingCost + totalBindingCost + emergencyCost;
     const gst = subtotal * 0.18;

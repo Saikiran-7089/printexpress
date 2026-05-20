@@ -79,22 +79,14 @@ export default function DocumentUploadHub() {
     }
 
     // A4 baseline rates
-    let basePageRate = 2.0; // BW single
-    if (printType === 'COLOR') {
-      basePageRate = sides === 'double' ? 7.5 : 10.0;
-    } else {
-      basePageRate = sides === 'double' ? 4.0 : 2.0;
-    }
+    const baseRates = printType === 'COLOR' 
+      ? { single: 10.0, double: 20.0 }
+      : { single: 2.0, double: 4.0 };
 
     // Emergency printing base adder
     const emergencyCostRate = isEmergency ? 1.0 : 0.0;
 
-    // Size multipliers
-    let sizeMultiplier = 1.0;
-    if (paperSize === 'A3') sizeMultiplier = 2.0;
-    if (paperSize === 'LEGAL') sizeMultiplier = 1.5;
-
-    const pageRate = basePageRate * sizeMultiplier;
+    const sizeMultiplier = paperSize === 'A3' ? 2.0 : (paperSize === 'LEGAL' ? 1.5 : 1.0);
 
     // Binding flat add-ons
     let bindingCost = 0.0;
@@ -104,8 +96,13 @@ export default function DocumentUploadHub() {
     let subtotal = 0;
     let emergencyTotal = 0;
     const items = files.map((file, idx) => {
-      const sheets = sides === 'double' ? Math.ceil(file.estimatedPages / 2) : file.estimatedPages;
-      const docPrintingCost = sheets * pageRate;
+      let docPrintingCost = 0;
+      if (sides === 'double') {
+        docPrintingCost = (Math.floor(file.estimatedPages / 2) * baseRates.double + (file.estimatedPages % 2) * baseRates.single) * sizeMultiplier;
+      } else {
+        docPrintingCost = file.estimatedPages * baseRates.single * sizeMultiplier;
+      }
+      
       const docEmergencyCost = file.estimatedPages * emergencyCostRate * copies;
       emergencyTotal += docEmergencyCost;
       const docCost = (docPrintingCost + bindingCost) * copies + docEmergencyCost;
@@ -387,7 +384,7 @@ export default function DocumentUploadHub() {
                       }`}
                     >
                       Double-Sided
-                      <span className="block text-[9px] font-normal text-slate-500 mt-0.5">₹4.00 per page</span>
+                      <span className="block text-[9px] font-normal text-slate-500 mt-0.5">₹4.00 per sheet</span>
                     </button>
                   </div>
                 </div>
