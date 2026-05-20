@@ -3,15 +3,15 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || "saikiranguest1@gmail.com",
-    pass: process.env.EMAIL_PASS || "pmasirjjcdsorzpl"
+    user: "saikiranguest1@gmail.com",
+    pass: "pmasirjjcdsorzpl"
   }
 });
 
 async function sendWelcomeEmail(userEmail, userName) {
   if (!userEmail) return;
   try {
-    const fromEmail = process.env.EMAIL_USER || "saikiranguest1@gmail.com";
+    const fromEmail = "saikiranguest1@gmail.com";
     const mailOptions = {
       from: `"PrintExpress" <${fromEmail}>`,
       to: userEmail,
@@ -36,7 +36,7 @@ async function sendWelcomeEmail(userEmail, userName) {
 async function sendPrintReadyEmail(userEmail, userName, orderId) {
   if (!userEmail) return;
   try {
-    const fromEmail = process.env.EMAIL_USER || "saikiranguest1@gmail.com";
+    const fromEmail = "saikiranguest1@gmail.com";
     const mailOptions = {
       from: `"PrintExpress" <${fromEmail}>`,
       to: userEmail,
