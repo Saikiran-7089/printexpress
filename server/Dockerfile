@@ -1,5 +1,5 @@
 # Production Backend Dockerfile
-FROM node:18-alpine
+FROM node:18-slim
 
 WORKDIR /app
 
@@ -17,5 +17,5 @@ RUN npx prisma generate
 
 EXPOSE 5000
 
-# Start server
-CMD ["npm", "start"]
+# Run migrations and then start the server
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
