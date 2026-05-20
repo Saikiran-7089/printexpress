@@ -1,6 +1,9 @@
 # Production Backend Dockerfile
 FROM node:18-slim
 
+# Install OpenSSL required by Prisma engines
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copy dependency manifests
