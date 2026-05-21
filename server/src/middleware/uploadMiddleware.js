@@ -64,6 +64,54 @@ function getFileUrl(file, req) {
   return `http://localhost:5000/uploads/${cleanName}`;
 }
 
+const MAX_DIR_SIZE = 400 * 1024 * 1024; // 400 MB soft limit
+
+function ensureFreeSpace(req, res, next) {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    return next();
+  }
+  
+  fs.readdir(UPLOADS_DIR, (err, files) => {
+    if (err) return next();
+    
+    let totalSize = 0;
+    const fileStats = [];
+    
+    files.forEach(file => {
+      const filePath = path.join(UPLOADS_DIR, file);
+      try {
+        const stats = fs.statSync(filePath);
+        totalSize += stats.size;
+        fileStats.push({ filePath, ctimeMs: stats.ctimeMs, size: stats.size });
+      } catch (e) {
+        // ignore
+      }
+    });
+    
+    if (totalSize > MAX_DIR_SIZE) {
+      console.log(`Uploads directory size (${(totalSize / 1024 / 1024).toFixed(2)} MB) exceeds 400 MB limit. Evicting old files to make room...`);
+      // Sort oldest first
+      fileStats.sort((a, b) => a.ctimeMs - b.ctimeMs);
+      
+      let freedSpace = 0;
+      const targetFreedSpace = totalSize - (MAX_DIR_SIZE * 0.8); // free up space so we are at 80% capacity
+      
+      for (const fileStat of fileStats) {
+        if (freedSpace >= targetFreedSpace) break;
+        try {
+          fs.unlinkSync(fileStat.filePath);
+          freedSpace += fileStat.size;
+          console.log(`Evicted old file to free space: ${path.basename(fileStat.filePath)}`);
+        } catch (e) {
+          console.error(`Failed to evict file: ${fileStat.filePath}`);
+        }
+      }
+    }
+    
+    next();
+  });
+}
+
 // Automated Cleanup: Delete files older than 12 hours
 function cleanupOldFiles() {
   if (!fs.existsSync(UPLOADS_DIR)) return;
@@ -101,5 +149,6 @@ setInterval(cleanupOldFiles, 60 * 60 * 1000);
 module.exports = {
   upload,
   getFileUrl,
-  UPLOADS_DIR
+  UPLOADS_DIR,
+  ensureFreeSpace
 };
