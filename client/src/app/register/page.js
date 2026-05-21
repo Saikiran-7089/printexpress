@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { Printer, Lock, ArrowRight, User, ShieldCheck, UserCheck, Mail } from 'lucide-react';
+import { Printer, Lock, ArrowRight, User, UserCheck, Mail } from 'lucide-react';
 
 export default function RegisterPage() {
   const { register, loading, error } = useAuth();
@@ -122,35 +122,9 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Dynamic Role Selector cards */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Select Account Role</label>
-            <div className="grid grid-cols-2 gap-3">
-              <div
-                onClick={() => !loading && setRole('CUSTOMER')}
-                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 cursor-pointer transition-all ${
-                  role === 'CUSTOMER'
-                    ? 'border-cyan-500 bg-cyan-500/5'
-                    : 'border-slate-800 bg-slate-950/30 hover:border-slate-700'
-                }`}
-              >
-                <User className={`w-5 h-5 ${role === 'CUSTOMER' ? 'text-cyan-400' : 'text-slate-500'}`} />
-                <span className="text-xs font-bold text-slate-200">Customer</span>
-                <span className="text-[10px] text-slate-500 text-center">Place orders & track</span>
-              </div>
-              <div
-                onClick={() => !loading && setRole('ADMIN')}
-                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 cursor-pointer transition-all ${
-                  role === 'ADMIN'
-                    ? 'border-emerald-500 bg-emerald-500/5'
-                    : 'border-slate-800 bg-slate-950/30 hover:border-slate-700'
-                }`}
-              >
-                <ShieldCheck className={`w-5 h-5 ${role === 'ADMIN' ? 'text-emerald-400' : 'text-slate-500'}`} />
-                <span className="text-xs font-bold text-slate-200">Shop Admin</span>
-                <span className="text-[10px] text-slate-500 text-center">Process print queues</span>
-              </div>
-            </div>
+          {/* Account type notice (since registration is only for Customer portal) */}
+          <div className="text-center text-xs text-slate-500 bg-slate-950/40 py-2.5 px-3 border border-slate-900 rounded-xl">
+            You are registering a <span className="text-cyan-400 font-semibold">Customer</span> account
           </div>
 
           {/* Submit register button */}
