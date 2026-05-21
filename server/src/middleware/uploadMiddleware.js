@@ -37,7 +37,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 15 * 1024 * 1024 }
+  limits: { fileSize: 20 * 1024 * 1024 }
 });
 
 /**
@@ -63,6 +63,40 @@ function getFileUrl(file, req) {
   
   return `http://localhost:5000/uploads/${cleanName}`;
 }
+
+// Automated Cleanup: Delete files older than 12 hours
+function cleanupOldFiles() {
+  if (!fs.existsSync(UPLOADS_DIR)) return;
+  
+  const now = Date.now();
+  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+  
+  fs.readdir(UPLOADS_DIR, (err, files) => {
+    if (err) {
+      console.error('Error reading uploads directory for cleanup:', err);
+      return;
+    }
+    
+    files.forEach(file => {
+      const filePath = path.join(UPLOADS_DIR, file);
+      fs.stat(filePath, (err, stats) => {
+        if (err) return;
+        
+        // If file creation time is older than 12 hours, delete it
+        if (now - stats.ctimeMs > TWELVE_HOURS_MS) {
+          fs.unlink(filePath, err => {
+            if (err) console.error(`Failed to delete old file: ${filePath}`, err);
+            else console.log(`Automatically deleted old upload: ${file}`);
+          });
+        }
+      });
+    });
+  });
+}
+
+// Run cleanup immediately on startup, and then every 1 hour
+cleanupOldFiles();
+setInterval(cleanupOldFiles, 60 * 60 * 1000);
 
 module.exports = {
   upload,
