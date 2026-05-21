@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import PushNotificationManager from "@/components/PushNotificationManager";
 
 export const metadata = {
   title: "PrintExpress | High-End Printing & Xerox Command Deck",
@@ -25,8 +26,10 @@ export default function RootLayout({ children }) {
           <div className="flex-1 flex flex-col">
             {children}
           </div>
+          <PushNotificationManager />
         </AuthProvider>
       </body>
     </html>
   );
 }
+

@@ -4,6 +4,7 @@ const { getFileUrl } = require('../middleware/uploadMiddleware');
 const { sendOrderStatusUpdate, notifyAdminNewOrder } = require('../services/socketService');
 const { sendSimulatedStatusEmail } = require('../services/notificationService');
 const { sendPrintReadyEmail } = require('../services/emailService');
+const { sendPushNotification } = require('../services/pushService');
 const { PDFDocument } = require('pdf-lib');
 const fs = require('fs');
 
@@ -288,9 +289,17 @@ async function updateOrderStatus(req, res) {
     // 2. Output email log to system console
     sendSimulatedStatusEmail(order.user.registrationNumber, order.user.name, updatedOrder, status);
     
-    // 2.5 Send email if manually set to READY
-    if (status === 'READY' && updatedOrder.user.email) {
-      sendPrintReadyEmail(updatedOrder.user.email, updatedOrder.user.name, updatedOrder.id);
+    // 2.5 Send email and push notification if manually set to READY
+    if (status === 'READY') {
+      if (updatedOrder.user.email) {
+        sendPrintReadyEmail(updatedOrder.user.email, updatedOrder.user.name, updatedOrder.id);
+      }
+      sendPushNotification(
+        updatedOrder.userId,
+        'Your Print is Ready! 🎉',
+        `Hi ${updatedOrder.user.name}, your print order is ready for pickup. Thank you for choosing PrintExpress!`,
+        '/dashboard'
+      );
     }
 
     // 3. Automated 5-minute update to READY
@@ -307,6 +316,12 @@ async function updateOrderStatus(req, res) {
           if (autoUpdatedOrder.user.email) {
             sendPrintReadyEmail(autoUpdatedOrder.user.email, autoUpdatedOrder.user.name, autoUpdatedOrder.id);
           }
+          sendPushNotification(
+            autoUpdatedOrder.userId,
+            'Your Print is Ready! 🎉',
+            `Hi ${autoUpdatedOrder.user.name}, your print order is ready for pickup. Thank you for choosing PrintExpress!`,
+            '/dashboard'
+          );
           console.log(`[OrderController.updateOrderStatus] Automatically updated order ${orderId} to READY after 5 minutes`);
         } catch (autoErr) {
           console.error(`[OrderController.updateOrderStatus] Error auto-updating order ${orderId}:`, autoErr);

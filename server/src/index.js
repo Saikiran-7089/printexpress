@@ -6,6 +6,8 @@ const path = require('path');
 const socketService = require('./services/socketService');
 const authRoutes = require('./routes/authRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+
 
 const app = express();
 const server = http.createServer(app);
@@ -97,6 +99,8 @@ app.get('/health', (req, res) => {
 // Mounting API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/notifications', notificationRoutes);
+
 
 // Socket.io initialization
 socketService.init(server, CLIENT_URL);
