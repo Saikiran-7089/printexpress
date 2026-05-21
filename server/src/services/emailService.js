@@ -1,19 +1,12 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: "saikiranguest1@gmail.com",
-    pass: "pmasirjjcdsorzpl"
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY || 're_P9fppdrV_Uwthauzk91dD2NpegW2pPTG9');
 
 async function sendWelcomeEmail(userEmail, userName) {
   if (!userEmail) return;
   try {
-    const fromEmail = "saikiranguest1@gmail.com";
-    const mailOptions = {
-      from: `"PrintExpress" <${fromEmail}>`,
+    const data = await resend.emails.send({
+      from: 'PrintExpress <onboarding@resend.dev>',
       to: userEmail,
       subject: 'Welcome to PrintExpress!',
       html: `
@@ -25,20 +18,18 @@ async function sendWelcomeEmail(userEmail, userName) {
           <p>Best regards,<br/>The PrintExpress Team</p>
         </div>
       `
-    };
-    await transporter.sendMail(mailOptions);
-    console.log(`Welcome email sent to ${userEmail}`);
+    });
+    console.log(`Welcome email sent to ${userEmail} via Resend. ID: ${data.id}`);
   } catch (error) {
-    console.error('Error sending welcome email:', error);
+    console.error('Error sending welcome email via Resend:', error);
   }
 }
 
 async function sendPrintReadyEmail(userEmail, userName, orderId) {
   if (!userEmail) return;
   try {
-    const fromEmail = "saikiranguest1@gmail.com";
-    const mailOptions = {
-      from: `"PrintExpress" <${fromEmail}>`,
+    const data = await resend.emails.send({
+      from: 'PrintExpress <onboarding@resend.dev>',
       to: userEmail,
       subject: 'Your Print Order is Ready!',
       html: `
@@ -51,11 +42,10 @@ async function sendPrintReadyEmail(userEmail, userName, orderId) {
           <p>Best regards,<br/>The PrintExpress Team</p>
         </div>
       `
-    };
-    await transporter.sendMail(mailOptions);
-    console.log(`Print ready email sent to ${userEmail}`);
+    });
+    console.log(`Print ready email sent to ${userEmail} via Resend. ID: ${data.id}`);
   } catch (error) {
-    console.error('Error sending print ready email:', error);
+    console.error('Error sending print ready email via Resend:', error);
   }
 }
 
