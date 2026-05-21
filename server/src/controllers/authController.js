@@ -17,6 +17,11 @@ async function register(req, res) {
       return res.status(400).json({ error: "Missing required fields (name, registrationNumber, password)." });
     }
 
+    // Security check: Block anyone from registering with the username 'admin'
+    if (registrationNumber.toLowerCase().trim() === 'admin') {
+      return res.status(403).json({ error: "Reserved username. Cannot register as admin." });
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { registrationNumber: registrationNumber.toLowerCase().trim() }
@@ -30,10 +35,10 @@ async function register(req, res) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Determine role (default to CUSTOMER unless explicitly authorized as ADMIN)
-    const userRole = role === 'ADMIN' ? 'ADMIN' : 'CUSTOMER';
+    // Force role to CUSTOMER - admins can only be created via backend seed script
+    const userRole = 'CUSTOMER';
 
-    // Save user in SQLite
+    // Save user
     const user = await prisma.user.create({
       data: {
         name,

@@ -20,22 +20,22 @@ const CLIENT_URL = (process.env.CLIENT_URL || "http://localhost:3000").replace(/
 // Seeder for sandbox accounts
 async function seedDefaultUsers() {
   try {
-    const adminExists = await prisma.user.findUnique({
-      where: { registrationNumber: 'admin' }
+    const salt = await bcrypt.genSalt(10);
+    const adminHash = await bcrypt.hash('Sai7089', salt);
+    await prisma.user.upsert({
+      where: { registrationNumber: 'admin' },
+      update: {
+        passwordHash: adminHash,
+        role: 'ADMIN'
+      },
+      create: {
+        name: 'Admin',
+        registrationNumber: 'admin',
+        passwordHash: adminHash,
+        role: 'ADMIN'
+      }
     });
-    if (!adminExists) {
-      const salt = await bcrypt.genSalt(10);
-      const adminHash = await bcrypt.hash('password123', salt);
-      await prisma.user.create({
-        data: {
-          name: 'Express Admin (Manager)',
-          registrationNumber: 'admin',
-          passwordHash: adminHash,
-          role: 'ADMIN'
-        }
-      });
-      console.log('🌱 [Seeder] Seeded default ADMIN user: registrationNumber "admin" / password123');
-    }
+    console.log('🌱 [Seeder] Ensured ADMIN user exists: registrationNumber "admin" / password "Sai7089"');
 
     const customerExists = await prisma.user.findUnique({
       where: { registrationNumber: 'customer' }
