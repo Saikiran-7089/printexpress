@@ -11,18 +11,30 @@ router.post('/logout', logout);
 
 router.get('/test-email', async (req, res) => {
   try {
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: "saikiranguest1@gmail.com",
-        pass: "pmasirjjcdsorzpl"
-      }
+    const { Resend } = require('resend');
+    const resend = new Resend('re_P9fppdrV_Uwthauzk91dD2NpegW2pPTG9');
+    const data = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: 'saikirangoud152@gmail.com',
+      subject: 'Test API Connection',
+      html: '<p>API is working</p>'
     });
-    await transporter.verify();
-    res.json({ success: true, message: "SMTP connection successful!" });
+    res.json({ success: true, data });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message, stack: error.stack, code: error.code });
+    res.status(500).json({ success: false, error: error.message, stack: error.stack });
+  }
+});
+
+router.get('/reset-test-account', async (req, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    await prisma.user.deleteMany({
+      where: { email: 'saikirangoud152@gmail.com' }
+    });
+    res.json({ success: true, message: 'Deleted saikirangoud152@gmail.com account so you can register again.' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
