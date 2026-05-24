@@ -389,7 +389,7 @@ async function updateOrderConfig(req, res) {
 
     const invoice = calculateInvoice(pricingPayload);
 
-    // Save updated values to SQLite database
+    // Save updated values to database
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: {
@@ -399,9 +399,14 @@ async function updateOrderConfig(req, res) {
       },
       include: {
         documents: true,
-        transactions: true
+        transactions: true,
+        user: true
       }
     });
+
+    // Broadcast the configuration changes to the admin dashboard and customer in real-time
+    sendOrderStatusUpdate(order.userId, order.id, order.orderStatus, updatedOrder);
+
 
     return res.status(200).json({
       message: "Print job specifications updated successfully!",
