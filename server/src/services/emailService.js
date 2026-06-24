@@ -49,7 +49,36 @@ async function sendPrintReadyEmail(userEmail, userName, orderId) {
   }
 }
 
+async function sendPasswordResetEmail(userEmail, userName, resetLink) {
+  if (!userEmail) return;
+  try {
+    const data = await resend.emails.send({
+      from: 'PrintExpress <onboarding@resend.dev>',
+      to: userEmail,
+      subject: 'Reset Your PrintXpress Password',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #1e293b;">
+          <h2 style="color: #0ea5e9; margin-bottom: 20px;">Reset Your PrintXpress Password</h2>
+          <p>Hello ${userName || 'User'},</p>
+          <p>We received a request to reset your password for your PrintXpress account.</p>
+          <p style="margin: 24px 0;">
+            <a href="${resetLink}" style="display: inline-block; background-color: #0ea5e9; color: #ffffff; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 8px;">Reset Password</a>
+          </p>
+          <p style="color: #64748b; font-size: 14px;">This link will expire in 15 minutes.</p>
+          <p style="color: #64748b; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+          <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 24px 0;" />
+          <p style="color: #94a3b8; font-size: 12px;">Best regards,<br/>The PrintXpress Team</p>
+        </div>
+      `
+    });
+    console.log(`Password reset email sent to ${userEmail} via Resend. ID: ${data.id}`);
+  } catch (error) {
+    console.error('Error sending password reset email via Resend:', error);
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
-  sendPrintReadyEmail
+  sendPrintReadyEmail,
+  sendPasswordResetEmail
 };
