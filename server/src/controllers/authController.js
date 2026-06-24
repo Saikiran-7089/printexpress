@@ -226,6 +226,13 @@ async function forgotPassword(req, res) {
     const clientUrl = (process.env.CLIENT_URL || "http://localhost:3000").replace(/\/$/, "");
     const resetLink = `${clientUrl}/reset-password/${token}`;
     
+    // Print reset link directly in terminal for easy sandbox testing/recovery
+    console.log(`\n==========================================================================`);
+    console.log(`🔑 [AuthController] PASSWORD RESET LINK GENERATED FOR USER: ${user.name}`);
+    console.log(`📧 Recipient Email: ${user.email}`);
+    console.log(`🔗 Reset URL Link:  ${resetLink}`);
+    console.log(`==========================================================================\n`);
+
     await sendPasswordResetEmail(user.email, user.name, resetLink);
 
     return res.status(200).json({
