@@ -23,6 +23,8 @@ function shouldUseSMTP() {
   return transporter && process.env.NODE_ENV !== 'production';
 }
 
+const resendSender = process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev';
+
 async function sendWelcomeEmail(userEmail, userName) {
   if (!userEmail) return;
   
@@ -53,7 +55,7 @@ async function sendWelcomeEmail(userEmail, userName) {
   // Resend Fallback
   try {
     const data = await resend.emails.send({
-      from: 'PrintExpress <onboarding@resend.dev>',
+      from: `PrintExpress <${resendSender}>`,
       to: userEmail,
       subject: 'Welcome to PrintExpress!',
       html: `
@@ -103,7 +105,7 @@ async function sendPrintReadyEmail(userEmail, userName, orderId) {
   // Resend Fallback
   try {
     const data = await resend.emails.send({
-      from: 'PrintExpress <onboarding@resend.dev>',
+      from: `PrintExpress <${resendSender}>`,
       to: userEmail,
       subject: 'Your Print Order is Ready!',
       html: `
@@ -158,7 +160,7 @@ async function sendPasswordResetEmail(userEmail, userName, resetLink) {
   // Resend Fallback
   try {
     const data = await resend.emails.send({
-      from: 'PrintExpress <onboarding@resend.dev>',
+      from: `PrintExpress <${resendSender}>`,
       to: userEmail,
       subject: 'Reset Your PrintXpress Password',
       html: `
